@@ -356,4 +356,35 @@ class HmmModel extends Cloneable {
   
   }
 
+  /**
+   * Normalize the probabilities of the model
+   */
+  def normalize() {
+    
+    var isum = 0.0
+    (0 until numHiddenStates).foreach(i => {
+      
+      isum += Pi.getQuick(i)
+      
+      var sum = 0.0
+      (0 until numHiddenStates).foreach(j => sum += A.getQuick(i,j))
+      
+      if (sum != 1.0) {
+        (0 until numHiddenStates).foreach(j => A.setQuick(i,j, A.getQuick(i,j) / sum))
+      }
+      
+      sum = 0.0
+      (0 until numOutputStates).foreach(j => sum += B.getQuick(i,j))
+      
+      if (sum != 1.0) {
+        (0 until numOutputStates).foreach(j => B.setQuick(i,j, B.getQuick(i,j) / sum))
+      }
+      
+    })
+    
+    if (isum != 1.0) {
+      (0 until numHiddenStates).foreach(i => Pi.setQuick(i, Pi.getQuick(i) / isum))      
+    }
+  }
+
 }
