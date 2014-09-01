@@ -162,7 +162,7 @@ object HmmTrainer {
    * Iteratively train the parameters of the given initial model with regard 
    * to the observed sequence using Viterbi training.
    */
-  def trainViterbi(initialModel:HmmModel,observedStates:Array[Int],pseudoCount:Double,epsilon:Double,maxIterations:Int,scaled:Boolean):HmmModel = {
+  def trainViterbi(initialModel:HmmModel,observedStates:Array[Int],pseudoCount:Double,epsilon:Double=0.0001,maxIterations:Int=1000,scaled:Boolean=true):HmmModel = {
 
     /* Make sure the pseudo count is not zero */
     val pseudo = if (pseudoCount == 0) Double.MinValue else pseudoCount
@@ -230,7 +230,7 @@ object HmmTrainer {
    * iteratively train the parameters of the model with regard to the
    * givven observed sequence
    */
-  def trainBaumWelch(numHiddenStates:Int,numOutputStates:Int,observedStates:Array[Int],epsilon:Double, maxIterations:Int):HmmModel = {
+  def trainBaumWelch(numHiddenStates:Int,numOutputStates:Int,observedStates:Array[Int],epsilon:Double=0.0001, maxIterations:Int=1000):HmmModel = {
 	      
     /* Construct random-generated HMM */
     val model = new HmmModel(numHiddenStates, numOutputStates, new Date().getTime())
@@ -330,7 +330,7 @@ object HmmTrainer {
   
   }
 
-  private def unscaledBaumWelch(observedSequence:Array[Int],model:HmmModel,alpha:DenseMatrix,beta:DenseMatrix) {
+  private def unscaledBaumWelch(observedStates:Array[Int],model:HmmModel,alpha:DenseMatrix,beta:DenseMatrix) {
     
     val Pi = model.getPiVector
     
@@ -342,7 +342,7 @@ object HmmTrainer {
     val numHiddenStates = model.getNumHiddenStates()
     val numOutputStates = model.getNumOutputStates()
     
-    val sequenceLen = observedSequence.length
+    val numObserv = observedStates.length
  
     for (i <- 0 until numHiddenStates) {
       Pi.setQuick(i, alpha.getQuick(0,i) * beta.getQuick(0,i))
@@ -353,8 +353,8 @@ object HmmTrainer {
       (0 until numHiddenStates).foreach(j => {
         
         var temp = 0.0
-        (0 until sequenceLen - 1).foreach(t => {
-          temp += alpha.getQuick(t,i) * B.getQuick(j, observedSequence(t + 1)) * beta.getQuick(t + 1, j)
+        (0 until numObserv - 1).foreach(t => {
+          temp += alpha.getQuick(t,i) * B.getQuick(j, observedStates(t + 1)) * beta.getQuick(t + 1, j)
         })
         
         
@@ -368,9 +368,9 @@ object HmmTrainer {
       (0 until numOutputStates).foreach(j => {
         
         var temp = 0.0
-        (0 until sequenceLen).foreach(t => {
+        (0 until numObserv).foreach(t => {
           // delta tensor
-          if (observedSequence(t) == j) {
+          if (observedStates(t) == j) {
             temp += alpha.getQuick(t, i) * beta.getQuick(t, i)
           }
         })
